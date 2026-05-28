@@ -360,12 +360,24 @@ function setBg(i){
 }
 setBg(0);
 
-/* drive bg by which section is centered */
+/* drive bg by whichever section crosses the viewport center —
+   height-independent, so tall sections aren't skipped on short (desktop) viewports */
 const sections=[...document.querySelectorAll('section[data-bg]')];
-const bgObs=new IntersectionObserver(es=>{
-  es.forEach(e=>{if(e.isIntersecting)setBg(+e.target.dataset.bg);});
-},{threshold:.5});
-sections.forEach(s=>bgObs.observe(s));
+function pickBg(){
+  const mid=window.innerHeight/2;
+  let best=sections[0];
+  for(const s of sections){
+    const r=s.getBoundingClientRect();
+    if(r.top<=mid && r.bottom>=mid){best=s;break;}
+  }
+  setBg(+best.dataset.bg);
+}
+let ticking=false;
+window.addEventListener('scroll',()=>{
+  if(!ticking){requestAnimationFrame(()=>{pickBg();ticking=false;});ticking=true;}
+},{passive:true});
+window.addEventListener('resize',pickBg);
+pickBg();
 
 /* ---------- reveal on scroll ---------- */
 const revObs=new IntersectionObserver(es=>{
@@ -393,15 +405,17 @@ document.querySelectorAll('[data-count]').forEach(el=>countObs.observe(el));
 
 /* ---------- nav dots ---------- */
 const dots=[...document.querySelectorAll('#dots a')];
-const dotObs=new IntersectionObserver(es=>{
-  es.forEach(e=>{
-    if(e.isIntersecting){
-      const i=sections.indexOf(e.target);
-      dots.forEach(d=>d.classList.toggle('on',+d.dataset.s===i));
-    }
+function pickDot(){
+  const mid=window.innerHeight/2;
+  let idx=0;
+  sections.forEach((s,n)=>{
+    const r=s.getBoundingClientRect();
+    if(r.top<=mid && r.bottom>=mid)idx=n;
   });
-},{threshold:.5});
-sections.forEach(s=>dotObs.observe(s));
+  dots.forEach(d=>d.classList.toggle('on',+d.dataset.s===idx));
+}
+window.addEventListener('scroll',()=>{requestAnimationFrame(pickDot);},{passive:true});
+pickDot();
 dots.forEach(d=>d.addEventListener('click',ev=>{
   ev.preventDefault();
   sections[+d.dataset.s].scrollIntoView({behavior:'smooth'});
