@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ondine — Protecting the living sea</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --midnight:#050B1A;
+    --abyss:#0B1B33;
+    --glow:#7FE3D4;
+    --paper:#E8E6E1;
+    --paper-dim:rgba(232,230,225,.55);
+    --paper-faint:rgba(232,230,225,.32);
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--midnight);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    font-weight:300;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Fixed background stage ---------- */
+  .stage{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background:var(--midnight);
+  }
+  .stage video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:0;
+    transition:opacity 1100ms var(--ease);
+    will-change:opacity;
+  }
+  .stage video.active{opacity:1}
+  /* depth dimming overlay deepens as you descend */
+  .stage::after{
+    content:"";
+    position:absolute;inset:0;
+    background:linear-gradient(180deg,
+      rgba(5,11,26,.35) 0%,
+      rgba(5,11,26,.55) 50%,
+      rgba(5,11,26,.78) 100%);
+    pointer-events:none;
+  }
+
+  /* drifting particles */
+  .particles{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+  .particles span{
+    position:absolute;
+    bottom:-10px;
+    width:3px;height:3px;
+    background:var(--glow);
+    border-radius:50%;
+    opacity:0;
+    filter:blur(.5px);
+    animation:rise linear infinite;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0) translateX(0);opacity:0}
+    10%{opacity:.5}
+    90%{opacity:.3}
+    100%{transform:translateY(-105vh) translateX(40px);opacity:0}
+  }
+
+  /* ---------- Foreground content ---------- */
+  .content{position:relative;z-index:2}
+  section{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:clamp(2rem,7vw,9rem);
+    max-width:1500px;
+    margin:0 auto;
+  }
+
+  h1,h2,h3,.stat-num{font-family:'Newsreader',serif;font-weight:300;letter-spacing:-.01em}
+
+  /* nav */
+  .brand{
+    position:fixed;top:clamp(1.5rem,3vw,2.5rem);left:clamp(1.5rem,5vw,4rem);
+    z-index:10;font-family:'Newsreader',serif;font-size:1.35rem;letter-spacing:.32em;
+    text-transform:uppercase;font-weight:400;
+    text-shadow:0 2px 20px rgba(0,0,0,.6);
+  }
+  .brand b{font-weight:400}
+
+  /* scroll-progress dots */
+  .dots{
+    position:fixed;right:clamp(1.2rem,3vw,2.6rem);top:50%;transform:translateY(-50%);
+    z-index:10;display:flex;flex-direction:column;gap:1.1rem;
+  }
+  .dots a{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--paper-faint);
+    transition:all .5s var(--ease);
+  }
+  .dots a.on{background:var(--glow);box-shadow:0 0 14px var(--glow);transform:scale(1.4)}
+  @media(max-width:760px){.dots{display:none}}
+
+  /* reveal animation */
+  .rev{opacity:0;transform:translateY(34px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+  .rev.in{opacity:1;transform:none}
+  .d1{transition-delay:.12s}.d2{transition-delay:.24s}.d3{transition-delay:.36s}
+
+  /* ---------- HERO ---------- */
+  #hero{justify-content:flex-end;min-height:100vh;padding-bottom:clamp(5rem,12vh,11rem)}
+  .hero-line{
+    font-family:'Newsreader',serif;font-style:italic;font-weight:300;
+    font-size:clamp(1.7rem,4.4vw,3.4rem);line-height:1.3;
+    max-width:18ch;text-shadow:0 2px 40px rgba(0,0,0,.7);
+  }
+  .scroll-cue{
+    position:absolute;bottom:2.2rem;left:50%;transform:translateX(-50%);
+    font-size:.7rem;letter-spacing:.34em;text-transform:uppercase;color:var(--paper-dim);
+    display:flex;flex-direction:column;align-items:center;gap:.7rem;
+  }
+  .scroll-cue::after{content:"";width:1px;height:46px;background:linear-gradient(var(--paper-dim),transparent);animation:cue 2.4s var(--ease) infinite}
+  @keyframes cue{0%,100%{opacity:.3;transform:scaleY(.6)}50%{opacity:1;transform:scaleY(1)}}
+
+  /* ---------- MISSION ---------- */
+  #mission{align-items:center;text-align:center}
+  .eyebrow{font-size:.72rem;letter-spacing:.4em;text-transform:uppercase;color:var(--glow);margin-bottom:2.2rem}
+  .lead{font-family:'Newsreader',serif;font-size:clamp(1.6rem,3.6vw,2.7rem);line-height:1.45;max-width:20ch;font-weight:300}
+  .mission-body{margin-top:2.4rem;max-width:46ch;color:var(--paper-dim);font-size:1.05rem}
+
+  /* ---------- WHAT WE DO ---------- */
+  #do .sec-head{font-size:clamp(2.2rem,5vw,4rem);max-width:14ch;margin-bottom:5rem}
+  .pillars{display:flex;flex-direction:column;gap:clamp(4rem,12vh,9rem)}
+  .pillar{max-width:42ch}
+  .pillar .num{font-family:'Newsreader',serif;font-size:1rem;color:var(--glow);letter-spacing:.2em;display:block;margin-bottom:1rem}
+  .pillar h3{font-size:clamp(1.6rem,3.4vw,2.4rem);margin-bottom:1rem}
+  .pillar p{color:var(--paper-dim);font-size:1.02rem}
+  .pillar:nth-child(2){margin-left:auto}
+  @media(max-width:760px){.pillar:nth-child(2){margin-left:0}}
+
+  /* ---------- REALITY ---------- */
+  #reality{align-items:flex-start;max-width:1100px}
+  .reality-stat{
+    font-family:'Newsreader',serif;font-size:clamp(3.4rem,11vw,8rem);
+    line-height:.95;font-weight:300;color:var(--paper);margin-bottom:1.6rem;
+  }
+  .reality-stat em{font-style:normal;color:var(--glow)}
+  .reality-sub{font-size:1.05rem;color:var(--paper-dim);max-width:34ch;margin-bottom:4rem}
+  blockquote{
+    border-left:1px solid var(--glow);padding-left:1.8rem;max-width:40ch;
+    font-family:'Newsreader',serif;font-style:italic;font-size:clamp(1.3rem,2.6vw,1.9rem);
+    line-height:1.5;font-weight:300;
+  }
+  blockquote cite{display:block;margin-top:1.4rem;font-family:'Inter';font-style:normal;font-size:.8rem;letter-spacing:.12em;color:var(--paper-dim);text-transform:uppercase}
+
+  /* ---------- IMPACT ---------- */
+  #impact .eyebrow{margin-bottom:4rem}
+  .impact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(2rem,5vw,5rem)}
+  @media(max-width:760px){.impact-grid{grid-template-columns:1fr;gap:3.5rem}}
+  .stat-num{font-size:clamp(3rem,7vw,5.5rem);line-height:1;color:var(--glow);font-weight:300;
+    text-shadow:0 0 30px rgba(127,227,212,.25)}
+  .stat-label{margin-top:1rem;font-size:.95rem;color:var(--paper-dim);letter-spacing:.02em}
+
+  /* ---------- DONATE ---------- */
+  #donate{align-items:center;text-align:center;background:linear-gradient(180deg,transparent,rgba(5,11,26,.55))}
+  #donate .lead{margin-bottom:1.4rem}
+  .donate-sub{color:var(--paper-dim);max-width:40ch;font-size:1.05rem;margin-bottom:3.4rem}
+  .tiers{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-bottom:2.4rem}
+  .tier{
+    background:rgba(11,27,51,.4);
+    border:1px solid var(--paper-faint);
+    color:var(--paper);
+    font-family:'Newsreader',serif;font-size:1.5rem;font-weight:300;
+    padding:1.5rem 2rem;min-width:128px;border-radius:3px;cursor:pointer;
+    transition:all .5s var(--ease);backdrop-filter:blur(3px);
+  }
+  .tier small{display:block;font-family:'Inter';font-size:.72rem;letter-spacing:.04em;
+    color:var(--paper-dim);margin-top:.5rem;line-height:1.5;text-transform:none}
+  .tier:hover{border-color:var(--paper-dim);transform:translateY(-3px)}
+  .tier.sel{
+    border-color:var(--glow);color:var(--glow);
+    box-shadow:0 0 28px rgba(127,227,212,.25);
+  }
+  .tier.sel small{color:rgba(127,227,212,.7)}
+  .custom-amt{
+    background:transparent;border:none;border-bottom:1px solid var(--paper-faint);
+    color:var(--paper);font-family:'Newsreader',serif;font-size:1.3rem;text-align:center;
+    width:150px;padding:.6rem .4rem;margin-bottom:2.8rem;transition:border-color .4s var(--ease);
+  }
+  .custom-amt::placeholder{color:var(--paper-faint)}
+  .custom-amt:focus{outline:none;border-color:var(--glow)}
+  .give-btn{
+    background:var(--glow);color:var(--midnight);border:none;
+    font-family:'Inter';font-weight:500;font-size:.82rem;letter-spacing:.22em;text-transform:uppercase;
+    padding:1.15rem 3.2rem;border-radius:2px;cursor:pointer;
+    transition:all .5s var(--ease);box-shadow:0 0 0 rgba(127,227,212,0);
+  }
+  .give-btn:hover{box-shadow:0 0 32px rgba(127,227,212,.45);transform:translateY(-2px)}
+  .donate-note{margin-top:2.2rem;font-size:.78rem;letter-spacing:.04em;color:var(--paper-faint);max-width:36ch}
+
+  /* glow pulse for interactive accent */
+  .pulse{animation:pulse 3.4s var(--ease) infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+  /* end note */
+  .endnote{position:relative;z-index:2;text-align:center;padding:7rem 2rem 9rem;color:var(--paper-faint);font-size:.82rem;letter-spacing:.18em;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<!-- fixed video stage -->
+<div class="stage" id="stage">
+  <video data-i="0" muted loop playsinline preload="auto" src="https://res.cloudinary.com/dnnfhyeuv/video/upload/v1779961773/hero_pxpg54.mp4"></video>
+  <video data-i="1" muted loop playsinline preload="auto" src="https://res.cloudinary.com/dnnfhyeuv/video/upload/v1779961773/Section_2_background_bsu8ht.mp4"></video>
+  <video data-i="2" muted loop playsinline preload="auto" src="https://res.cloudinary.com/dnnfhyeuv/video/upload/v1779961773/Section_3_background_mqjyjt.mp4"></video>
+  <video data-i="3" muted loop playsinline preload="auto" src="https://res.cloudinary.com/dnnfhyeuv/video/upload/v1779961773/Section_4_background_s8tifv.mp4"></video>
+  <video data-i="4" muted loop playsinline preload="auto" src="https://res.cloudinary.com/dnnfhyeuv/video/upload/v1779961773/Section_5_background_r2dtxu.mp4"></video>
+</div>
+
+<div class="particles" id="particles"></div>
+
+<div class="brand"><b>Ondine</b></div>
+
+<nav class="dots" id="dots">
+  <a href="#hero" class="on" data-s="0"></a>
+  <a href="#mission" data-s="1"></a>
+  <a href="#do" data-s="2"></a>
+  <a href="#reality" data-s="3"></a>
+  <a href="#impact" data-s="4"></a>
+  <a href="#donate" data-s="5"></a>
+</nav>
+
+<main class="content">
+
+  <!-- HERO -->
+  <section id="hero" data-bg="0">
+    <p class="hero-line rev in">The ocean is not a backdrop. It is a living thing — and someone has to protect it.</p>
+    <div class="scroll-cue">Descend</div>
+  </section>
+
+  <!-- MISSION -->
+  <section id="mission" data-bg="1">
+    <p class="eyebrow rev">Our Mission</p>
+    <p class="lead rev d1">We protect what we cannot live without.</p>
+    <p class="mission-body rev d2">Ondine works across the North Sea and Mediterranean — and, in time, every coast that will have us. We clean. We rescue. We study, and we teach. Not out of fear, but out of love for a system older and wiser than any of us.</p>
+  </section>
+
+  <!-- WHAT WE DO -->
+  <section id="do" data-bg="2">
+    <h2 class="sec-head rev">Three quiet kinds of work.</h2>
+    <div class="pillars">
+      <div class="pillar rev">
+        <span class="num">01 — Cleanup</span>
+        <h3>We remove what doesn't belong.</h3>
+        <p>Plastic, ghost nets, abandoned gear. Hauled out by hand and by boat, sorted, weighed, and kept out of the water for good.</p>
+      </div>
+      <div class="pillar rev">
+        <span class="num">02 — Rescue</span>
+        <h3>We give animals a second tide.</h3>
+        <p>Seals, turtles, seabirds — found tangled or stranded, treated by our marine vets, and released back to where they belong.</p>
+      </div>
+      <div class="pillar rev">
+        <span class="num">03 — Research &amp; Education</span>
+        <h3>We learn, then we teach.</h3>
+        <p>Coastal biodiversity surveys feed open data and classroom programs. Protection lasts longest when people understand what they're protecting.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- REALITY -->
+  <section id="reality" data-bg="3">
+    <p class="eyebrow rev">The Reality</p>
+    <p class="reality-stat rev d1">One garbage truck <em>every minute.</em></p>
+    <p class="reality-sub rev d2">That is roughly how much plastic enters the sea, all day, every day. We don't say it to frighten you. We say it because it's true — and because it's reversible.</p>
+    <blockquote class="rev d3">"The ocean asks for so little. Mostly, it asks us to stop making it worse."
+      <cite>— Dr. Mara Vinke, Marine Ecologist</cite>
+    </blockquote>
+  </section>
+
+  <!-- IMPACT -->
+  <section id="impact" data-bg="4">
+    <p class="eyebrow rev">Impact So Far</p>
+    <div class="impact-grid">
+      <div class="rev">
+        <div class="stat-num pulse" data-count="2840" data-suffix="">0</div>
+        <div class="stat-label">Tons of plastic removed</div>
+      </div>
+      <div class="rev d1">
+        <div class="stat-num pulse" data-count="1196" data-suffix="">0</div>
+        <div class="stat-label">Marine animals rescued</div>
+      </div>
+      <div class="rev d2">
+        <div class="stat-num pulse" data-count="37" data-suffix="">0</div>
+        <div class="stat-label">Coastal sites under protection</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DONATE -->
+  <section id="donate" data-bg="4">
+    <p class="eyebrow rev">Lend a Hand</p>
+    <p class="lead rev d1">Protection has a price. It's a kind one.</p>
+    <p class="donate-sub rev d2">Every gift goes to boats, vets, and survey kit — not noise. Choose what feels right. There's no wrong amount, and no follow-up you didn't ask for.</p>
+
+    <div class="tiers rev d2" id="tiers">
+      <button class="tier" data-amt="15">€15<small>One net,<br>recovered</small></button>
+      <button class="tier sel" data-amt="40">€40<small>A turtle's<br>treatment</small></button>
+      <button class="tier" data-amt="90">€90<small>A day of<br>survey work</small></button>
+    </div>
+
+    <input class="custom-amt rev d2" id="custom" type="text" inputmode="numeric" placeholder="Other €" aria-label="Custom amount">
+
+    <button class="give-btn rev d3" id="give">Give €40</button>
+    <p class="donate-note rev d3">Ondine is a registered nonprofit. 91 cents of every euro reaches the water.</p>
+  </section>
+
+</main>
+
+<div class="endnote">Demo — hero + four sections · Ondine</div>
+
+<script>
+/* ---------- particles ---------- */
+(function(){
+  const wrap=document.getElementById('particles');
+  for(let i=0;i<26;i++){
+    const s=document.createElement('span');
+    s.style.left=Math.random()*100+'%';
+    const dur=14+Math.random()*22;
+    s.style.animationDuration=dur+'s';
+    s.style.animationDelay=(-Math.random()*dur)+'s';
+    const sz=1+Math.random()*2.5;
+    s.style.width=s.style.height=sz+'px';
+    wrap.appendChild(s);
+  }
+})();
+
+/* ---------- video stage crossfade ---------- */
+const stage=document.getElementById('stage');
+const vids=[...stage.querySelectorAll('video')];
+let current=-1;
+function setBg(i){
+  if(i===current)return;
+  current=i;
+  vids.forEach((v,n)=>{
+    if(n===i){v.classList.add('active');v.play().catch(()=>{});}
+    else{v.classList.remove('active');}
+  });
+}
+setBg(0);
+
+/* drive bg by which section is centered */
+const sections=[...document.querySelectorAll('section[data-bg]')];
+const bgObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting)setBg(+e.target.dataset.bg);});
+},{threshold:.5});
+sections.forEach(s=>bgObs.observe(s));
+
+/* ---------- reveal on scroll ---------- */
+const revObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');revObs.unobserve(e.target);}});
+},{threshold:.25});
+document.querySelectorAll('.rev').forEach(el=>revObs.observe(el));
+
+/* ---------- count-up ---------- */
+const fmt=n=>n.toLocaleString('en-US');
+const countObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting)return;
+    const el=e.target, target=+el.dataset.count, dur=1800, t0=performance.now();
+    function tick(now){
+      const p=Math.min((now-t0)/dur,1);
+      const eased=1-Math.pow(1-p,3);
+      el.textContent=fmt(Math.round(target*eased));
+      if(p<1)requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    countObs.unobserve(el);
+  });
+},{threshold:.6});
+document.querySelectorAll('[data-count]').forEach(el=>countObs.observe(el));
+
+/* ---------- nav dots ---------- */
+const dots=[...document.querySelectorAll('#dots a')];
+const dotObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      const i=sections.indexOf(e.target);
+      dots.forEach(d=>d.classList.toggle('on',+d.dataset.s===i));
+    }
+  });
+},{threshold:.5});
+sections.forEach(s=>dotObs.observe(s));
+dots.forEach(d=>d.addEventListener('click',ev=>{
+  ev.preventDefault();
+  sections[+d.dataset.s].scrollIntoView({behavior:'smooth'});
+}));
+
+/* ---------- donation tiers ---------- */
+(function(){
+  const tiers=[...document.querySelectorAll('.tier')];
+  const custom=document.getElementById('custom');
+  const give=document.getElementById('give');
+  let amt=40;
+  function refresh(){give.textContent= amt? 'Give €'+amt : 'Choose an amount';}
+  tiers.forEach(t=>t.addEventListener('click',()=>{
+    tiers.forEach(x=>x.classList.remove('sel'));
+    t.classList.add('sel');
+    custom.value='';
+    amt=+t.dataset.amt;refresh();
+  }));
+  custom.addEventListener('input',()=>{
+    const v=custom.value.replace(/[^0-9]/g,'');
+    custom.value=v;
+    tiers.forEach(x=>x.classList.remove('sel'));
+    amt=v?+v:0;refresh();
+  });
+})();
+</script>
+</body>
+</html>
